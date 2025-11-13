@@ -1,0 +1,25 @@
+{
+  "name": "quizmock-backend-hono-bun",
+  "scripts": {
+    "dev": "bun --watch src/server.ts",
+    "start": "bun run src/server.ts",
+    "seed": "bun run src/db/seed.ts",
+    "test": "docker compose exec -T backend bun test",
+    "test:watch": "docker compose exec backend bun test --watch",
+    "format": "prettier --write \"src/**/*.{ts,js,json}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,js,json}\""
+  },
+  "dependencies": {
+    "@hono/zod-validator": "^0.7.4",
+    "drizzle-orm": "^0.44.7",
+    "hono": "^4.10.5",
+    "jose": "^6.1.1",
+    "postgres": "^3.4.7",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "drizzle-kit": "^0.31.6",
+    "prettier": "^3.6.2"
+  }
+}
