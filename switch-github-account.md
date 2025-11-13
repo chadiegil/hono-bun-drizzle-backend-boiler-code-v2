@@ -1,0 +1,2 @@
+gh logout
+gh login
