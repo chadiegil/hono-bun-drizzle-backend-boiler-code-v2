@@ -8,7 +8,15 @@ import { upgradeWebSocket, websocket } from 'hono/bun'
 import { db } from './db/client'
 import { users } from './db/schema'
 import { authMiddleware } from './middleware/auth.middleware'
+import { requireSuperAdmin, requireModerator } from './middleware/rbac.middleware'
 import { AuthController } from './controller/auth/auth.controller'
+import { CategoryController } from './controller/category/category.controller'
+import { QuestionController } from './controller/question/question.controller'
+import { ExamController } from './controller/exam/exam.controller'
+import { AttemptController } from './controller/attempt/attempt.controller'
+import { AdminController } from './controller/admin/admin.controller'
+import { ReviewController } from './controller/review/review.controller'
+import { ImportExportController } from './controller/import-export/import-export.controller'
 import { requestId } from './middleware/request-id.middleware'
 import { rateLimiter, authRateLimiter } from './middleware/rate-limit.middleware'
 import { env } from './config/env'
@@ -101,22 +109,113 @@ app.post('/api/auth/refresh', authRateLimiter(), AuthController.refresh)
 app.get('/api/auth/profile', authMiddleware, AuthController.getProfile)
 app.post('/api/auth/logout', authMiddleware, AuthController.logout)
 
-// Test route to get all users (protected)
-app.get('/api/users', authMiddleware, async (c) => {
-  const allUsers = await db
-    .select({
-      id: users.id,
-      name: users.name,
-      email: users.email,
-      createdAt: users.createdAt
-    })
-    .from(users)
+// ============================================
+// CATEGORY ROUTES
+// ============================================
+app.post('/api/categories', authMiddleware, CategoryController.create)
+app.get('/api/categories', CategoryController.getAll)
+app.get('/api/categories/tree', CategoryController.getTree)
+app.get('/api/categories/:id', CategoryController.getById)
+app.get('/api/categories/slug/:slug', CategoryController.getBySlug)
+app.put('/api/categories/:id', authMiddleware, CategoryController.update)
+app.delete('/api/categories/:id', authMiddleware, CategoryController.delete)
 
-  return c.json({
-    success: true,
-    data: allUsers
-  })
-})
+// ============================================
+// QUESTION ROUTES
+// ============================================
+app.post('/api/questions', authMiddleware, QuestionController.create)
+app.get('/api/questions', QuestionController.getAll)
+app.get('/api/questions/search', QuestionController.search)
+app.get('/api/questions/:id', QuestionController.getById)
+app.put('/api/questions/:id', authMiddleware, QuestionController.update)
+app.delete('/api/questions/:id', authMiddleware, QuestionController.delete)
+
+// ============================================
+// QUESTION REVIEW ROUTES
+// ============================================
+app.get('/api/questions/pending-review', authMiddleware, requireModerator(), ReviewController.getPendingReview)
+app.get('/api/questions/by-status/:status', authMiddleware, ReviewController.getByStatus)
+app.get('/api/questions/review-stats', authMiddleware, ReviewController.getReviewStats)
+app.put('/api/questions/:id/submit-review', authMiddleware, ReviewController.submitForReview)
+app.put('/api/questions/:id/approve', authMiddleware, requireModerator(), ReviewController.approveQuestion)
+app.put('/api/questions/:id/reject', authMiddleware, requireModerator(), ReviewController.rejectQuestion)
+app.post('/api/questions/bulk-approve', authMiddleware, requireModerator(), ReviewController.bulkApprove)
+app.post('/api/questions/bulk-reject', authMiddleware, requireModerator(), ReviewController.bulkReject)
+
+// ============================================
+// IMPORT/EXPORT ROUTES
+// ============================================
+app.get('/api/questions/import-template', ImportExportController.downloadTemplate)
+app.post('/api/questions/import/preview', authMiddleware, ImportExportController.previewImport)
+app.post('/api/questions/import', authMiddleware, ImportExportController.importQuestions)
+app.get('/api/questions/export', authMiddleware, ImportExportController.exportQuestions)
+
+// ============================================
+// EXAM ROUTES
+// ============================================
+app.post('/api/exams', authMiddleware, ExamController.create)
+app.get('/api/exams', ExamController.getAll)
+app.get('/api/exams/:id', ExamController.getById)
+app.get('/api/exams/:id/preview', ExamController.getPreview)
+app.get('/api/exams/:id/questions', ExamController.getQuestions)
+app.put('/api/exams/:id', authMiddleware, ExamController.update)
+app.delete('/api/exams/:id', authMiddleware, ExamController.delete)
+app.post('/api/exams/:id/publish', authMiddleware, ExamController.publish)
+app.post('/api/exams/:id/questions', authMiddleware, ExamController.addQuestions)
+app.delete('/api/exams/:id/questions/:questionId', authMiddleware, ExamController.removeQuestion)
+
+// ============================================
+// EXAM ATTEMPT ROUTES (Taking exams)
+// ============================================
+app.post('/api/exams/:id/start', authMiddleware, AttemptController.startAttempt)
+app.get('/api/attempts/:id', authMiddleware, AttemptController.getAttemptById)
+app.post('/api/attempts/:id/answer', authMiddleware, AttemptController.submitAnswer)
+app.post('/api/attempts/:id/submit', authMiddleware, AttemptController.submitExam)
+app.get('/api/attempts/:id/results', authMiddleware, AttemptController.getResults)
+app.get('/api/users/me/attempts', authMiddleware, AttemptController.getUserAttempts)
+
+// ============================================
+// ADMIN ROUTES (Role-based access)
+// ============================================
+app.get('/api/admin/users', authMiddleware, requireModerator(), AdminController.getUsers)
+app.put(
+  '/api/admin/users/:id/role',
+  authMiddleware,
+  requireSuperAdmin(),
+  AdminController.updateUserRole
+)
+app.put(
+  '/api/admin/users/:id/status',
+  authMiddleware,
+  requireModerator(),
+  AdminController.updateUserStatus
+)
+app.get(
+  '/api/admin/users/:id/contributions',
+  authMiddleware,
+  requireModerator(),
+  AdminController.getUserContributions
+)
+
+// Contributor management
+app.post(
+  '/api/admin/contributors',
+  authMiddleware,
+  requireModerator(),
+  AdminController.assignContributor
+)
+app.delete(
+  '/api/admin/contributors/:userId/categories/:categoryId',
+  authMiddleware,
+  requireModerator(),
+  AdminController.removeContributor
+)
+app.get(
+  '/api/admin/categories/:id/contributors',
+  authMiddleware,
+  requireModerator(),
+  AdminController.getCategoryContributors
+)
 
 // WebSocket endpoint
 app.get(

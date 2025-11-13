@@ -90,11 +90,14 @@ export function rateLimiter(options: RateLimitOptions = {}) {
 
 /**
  * Stricter rate limit for auth endpoints
+ * Relaxed in development, strict in production
  */
 export function authRateLimiter() {
+  const isDevelopment = process.env.NODE_ENV === 'development'
+
   return rateLimiter({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5, // Only 5 attempts per 15 minutes
+    max: isDevelopment ? 1000 : 5, // 1000 in dev, 5 in production
     message: 'Too many authentication attempts, please try again later'
   })
 }

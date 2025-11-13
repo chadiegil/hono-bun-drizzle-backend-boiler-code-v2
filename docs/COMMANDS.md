@@ -274,6 +274,7 @@ kill -9 PID
 ```
 
 #### Permission denied on drizzle folder
+
 ```bash
 # Fix permissions
 sudo chown -R $USER:$USER drizzle/
@@ -282,6 +283,7 @@ docker compose exec backend bunx drizzle-kit push
 ```
 
 #### Database connection issues
+
 ```bash
 # Check if database is running
 docker compose ps db
@@ -294,6 +296,7 @@ docker compose exec backend bun -e "const { db } = require('./src/db/client'); c
 ```
 
 #### Container won't start
+
 ```bash
 # View full logs
 docker compose logs backend
@@ -308,6 +311,7 @@ lsof -i :3000
 ```
 
 #### Cache issues
+
 ```bash
 # Clear Docker build cache
 docker builder prune
@@ -335,6 +339,7 @@ docker compose restart backend
 ```
 
 ### Fresh Database Setup
+
 ```bash
 # 1. Stop everything
 docker compose down -v

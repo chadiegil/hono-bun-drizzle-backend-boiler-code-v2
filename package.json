@@ -14,11 +14,13 @@
     "drizzle-orm": "^0.44.7",
     "hono": "^4.10.5",
     "jose": "^6.1.1",
+    "papaparse": "^5.5.3",
     "postgres": "^3.4.7",
     "zod": "^4.1.12"
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/papaparse": "^5.5.0",
     "drizzle-kit": "^0.31.6",
     "prettier": "^3.6.2"
   }
