@@ -67,7 +67,7 @@ GET    /api/questions/:id/review-history    # Review audit trail
 - Template download for contributors
 - Preview before import
 - Validation with detailed error messages
-- Bulk operations (import 100+ questions at once)
+- Bulk operations (import 100+ questions at once) must have limit so that the server wont crash 
 
 **API Endpoints:**
 ```
@@ -336,23 +336,6 @@ exam_registrations
   - registered_at, status
 ```
 
----
-
-### 4.2 Live Proctoring & Monitoring ⭐
-**Status**: Planned
-**Effort**: High (5+ days)
-**Impact**: Exam integrity
-
-**Features:**
-- WebSocket-based monitoring
-- Detect tab switching
-- Prevent copy/paste
-- Time tracking per question
-- Suspicious activity alerts
-- Screen recording (optional)
-
----
-
 ## 💰 Phase 5: Monetization (Priority: MEDIUM)
 
 ### 5.1 Payment Integration & Subscriptions ⭐⭐
@@ -362,7 +345,7 @@ exam_registrations
 
 **Features:**
 - Subscription tiers (Free, Pro, Premium)
-- Payment integration (PayMongo, Stripe)
+- Payment integration (PayMongo, Stripe, Xendit)
 - Access control based on tier
 - Trial periods
 - Discount codes
@@ -370,7 +353,7 @@ exam_registrations
 
 **Tiers:**
 - **Free**: 10 exams/month, basic analytics
-- **Pro**: Unlimited exams, advanced analytics, flashcards
+- **Pro**: Unlimited exams, advanced analytics, flashcards , can take exams from contributors
 - **Premium**: All features, priority support, certificates
 
 ---
@@ -382,7 +365,7 @@ exam_registrations
 
 **Features:**
 - Contributors sell question banks
-- Revenue sharing (70/30 split)
+- Revenue sharing (65/35 split)
 - Ratings and reviews
 - Preview questions before purchase
 - Automatic payments
@@ -404,101 +387,3 @@ exam_registrations
 - Custom certificate templates
 - Digital badges
 - Share on social media
-
----
-
-## 🤖 Phase 7: AI & Automation (Priority: LOW)
-
-### 7.1 AI Question Generation ⭐
-**Status**: Future consideration
-**Effort**: Very High
-**Impact**: Content scaling
-
-**Features:**
-- Generate questions from uploaded content
-- AI-powered difficulty assessment
-- Auto-categorization
-- Explanation generation
-
----
-
-### 7.2 Personalized Learning Path ⭐
-**Status**: Future consideration
-**Effort**: Very High
-**Impact**: Learning optimization
-
-**Features:**
-- AI recommends next topics to study
-- Adaptive difficulty adjustment
-- Identify knowledge gaps
-- Custom study plan generation
-
----
-
-## 📱 Phase 8: Mobile & Offline Support (Priority: MEDIUM)
-
-### 8.1 Mobile App (React Native / Flutter) ⭐⭐
-**Status**: Future consideration
-**Effort**: Very High (30+ days)
-
-**Features:**
-- Native iOS and Android apps
-- Push notifications
-- Offline exam mode
-- Biometric authentication
-- Optimized mobile UI
-
----
-
-### 8.2 Progressive Web App (PWA) ⭐
-**Status**: Planned
-**Effort**: Medium (3-4 days)
-
-**Features:**
-- Offline support with service workers
-- Install to home screen
-- Push notifications
-- Background sync
-
----
-
-## 📊 Success Metrics
-
-### Phase 1 Goals
-- 90%+ question approval rate
-- <24 hour review turnaround time
-- 50%+ users use analytics dashboard
-
-### Phase 2 Goals
-- 30%+ users create flashcards
-- Average 5+ day study streak
-- 40%+ users create study plans
-
-### Phase 3 Goals
-- 100+ comments per week
-- 10+ question reports resolved daily
-
----
-
-## Implementation Priority (Next 6 Weeks)
-
-| Week | Feature | Status |
-|------|---------|--------|
-| 1 | Question Review & Approval | 🟡 In Progress |
-| 2 | Import/Export | 📋 Planned |
-| 2-3 | Analytics Dashboard | 📋 Planned |
-| 4 | Flashcard System | 📋 Planned |
-| 5 | Study Plans | 📋 Planned |
-| 6 | Leaderboards | 📋 Planned |
-
----
-
-## Notes
-
-- All features will maintain backward compatibility
-- Each feature will include comprehensive testing
-- Documentation will be updated with each release
-- User feedback will guide priority adjustments
-
-**Last Updated**: 2025-01-13
-**Version**: 1.0
