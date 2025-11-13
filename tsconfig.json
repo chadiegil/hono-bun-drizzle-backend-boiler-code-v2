@@ -5,7 +5,8 @@
     "module": "esnext",
     "target": "esnext",
     "strict": true,
-    "allowJs": true,
-    "skipLibCheck": true
-  }
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["src"]
 }
