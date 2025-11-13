@@ -1,6 +1,5 @@
 import { z } from 'zod'
 
-// Define environment variable schema
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.string().default('3000'),
@@ -12,10 +11,6 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>
 
-/**
- * Validate environment variables on startup
- * Throws an error if validation fails
- */
 export function validateEnv(): Env {
   try {
     const env = envSchema.parse(process.env)
@@ -24,7 +19,7 @@ export function validateEnv(): Env {
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error('❌ Environment validation failed:')
-      error.errors.forEach((err) => {
+      error.issues.forEach((err) => {
         console.error(`  - ${err.path.join('.')}: ${err.message}`)
       })
       throw new Error('Invalid environment configuration')
@@ -33,5 +28,4 @@ export function validateEnv(): Env {
   }
 }
 
-// Export validated env for use throughout the app
 export const env = validateEnv()
