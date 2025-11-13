@@ -17,7 +17,7 @@ describe('authMiddleware', () => {
 
     const mockNext = async () => {}
 
-    const response = await authMiddleware(mockContext, mockNext)
+    const response = await authMiddleware(mockContext, mockNext) as any
 
     expect(response.status).toBe(401)
     expect(response.data.success).toBe(false)
@@ -40,7 +40,7 @@ describe('authMiddleware', () => {
 
     const mockNext = async () => {}
 
-    const response = await authMiddleware(mockContext, mockNext)
+    const response = await authMiddleware(mockContext, mockNext) as any
 
     expect(response.status).toBe(401)
     expect(response.data.success).toBe(false)
@@ -63,7 +63,7 @@ describe('authMiddleware', () => {
 
     const mockNext = async () => {}
 
-    const response = await authMiddleware(mockContext, mockNext)
+    const response = await authMiddleware(mockContext, mockNext) as any
 
     expect(response.status).toBe(401)
     expect(response.data.success).toBe(false)
@@ -134,7 +134,7 @@ describe('authMiddleware', () => {
 
     const mockNext = async () => {}
 
-    const response = await authMiddleware(mockContext, mockNext)
+    const response = await authMiddleware(mockContext, mockNext) as any
 
     expect(response.status).toBe(401)
     expect(response.data.success).toBe(false)

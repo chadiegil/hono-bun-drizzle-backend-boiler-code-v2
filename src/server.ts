@@ -5,10 +5,12 @@ const port = parseInt(env.PORT)
 
 const server = Bun.serve({
   port,
-  fetch: app.fetch
+  fetch: app.fetch,
+  websocket: app.websocket
 })
 
 console.log(`🚀 Server running on http://localhost:${port}`)
+console.log(`🔌 WebSocket ready on ws://localhost:${port}/ws`)
 console.log(`📝 Environment: ${env.NODE_ENV}`)
 console.log(`🔒 CORS Origins: ${env.CORS_ORIGIN || 'default'}`)
 

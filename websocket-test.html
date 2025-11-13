@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WebSocket Test Client</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+    }
+    h3 {
+      color: #666;
+      margin-top: 0;
+    }
+    input[type="text"] {
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+    }
+    button {
+      padding: 8px 16px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 8px;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .status {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+    .status.connected {
+      background: #28a745;
+      color: white;
+    }
+    .status.disconnected {
+      background: #dc3545;
+      color: white;
+    }
+    #messages {
+      border: 1px solid #ddd;
+      padding: 10px;
+      height: 400px;
+      overflow-y: auto;
+      background: #f9f9f9;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .message {
+      padding: 4px;
+      margin: 2px 0;
+      border-left: 3px solid #007bff;
+      background: white;
+      border-radius: 2px;
+    }
+    .message.received {
+      border-left-color: #28a745;
+    }
+    .message.sent {
+      border-left-color: #17a2b8;
+    }
+    .message.error {
+      border-left-color: #dc3545;
+      background: #ffe6e6;
+    }
+    .input-group {
+      margin: 10px 0;
+    }
+    .input-group label {
+      display: inline-block;
+      width: 100px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔌 WebSocket Test Client</h1>
+
+  <div class="container">
+    <h3>Connection</h3>
+    <div class="input-group">
+      <label>Status:</label>
+      <span id="status" class="status disconnected">Disconnected</span>
+    </div>
+    <div class="input-group">
+      <label>Client ID:</label>
+      <span id="clientId">-</span>
+    </div>
+    <div class="input-group">
+      <label>User ID:</label>
+      <span id="userId">-</span>
+    </div>
+    <button id="connect">Connect</button>
+    <button id="disconnect" disabled>Disconnect</button>
+    <button id="ping" disabled>Send Ping</button>
+  </div>
+
+  <div class="container">
+    <h3>Authentication</h3>
+    <div class="input-group">
+      <label>JWT Token:</label>
+      <input type="text" id="token" placeholder="Paste your JWT token here" style="width: 500px">
+      <button id="auth" disabled>Authenticate</button>
+    </div>
+    <small>Get a token by logging in via POST http://localhost:3000/api/auth/login</small>
+  </div>
+
+  <div class="container">
+    <h3>Rooms</h3>
+    <div class="input-group">
+      <label>Room ID:</label>
+      <input type="text" id="roomId" placeholder="e.g., lobby, chat-123" value="lobby">
+      <button id="joinRoom" disabled>Join Room</button>
+      <button id="leaveRoom" disabled>Leave Room</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <h3>Send Message</h3>
+    <div class="input-group">
+      <label>Message:</label>
+      <input type="text" id="message" placeholder="Type your message" style="width: 400px">
+    </div>
+    <div class="input-group">
+      <label>Room ID:</label>
+      <input type="text" id="messageRoomId" placeholder="Leave empty for broadcast">
+    </div>
+    <button id="send" disabled>Send Message</button>
+  </div>
+
+  <div class="container">
+    <h3>Messages</h3>
+    <button id="clear">Clear Messages</button>
+    <div id="messages"></div>
+  </div>
+
+  <script>
+    let ws = null
+    let clientId = null
+    let userId = null
+
+    const statusEl = document.getElementById('status')
+    const clientIdEl = document.getElementById('clientId')
+    const userIdEl = document.getElementById('userId')
+    const messagesEl = document.getElementById('messages')
+
+    const connectBtn = document.getElementById('connect')
+    const disconnectBtn = document.getElementById('disconnect')
+    const pingBtn = document.getElementById('ping')
+    const authBtn = document.getElementById('auth')
+    const joinRoomBtn = document.getElementById('joinRoom')
+    const leaveRoomBtn = document.getElementById('leaveRoom')
+    const sendBtn = document.getElementById('send')
+
+    function updateButtonStates(connected) {
+      connectBtn.disabled = connected
+      disconnectBtn.disabled = !connected
+      pingBtn.disabled = !connected
+      authBtn.disabled = !connected
+      joinRoomBtn.disabled = !connected
+      leaveRoomBtn.disabled = !connected
+      sendBtn.disabled = !connected
+    }
+
+    function addMessage(msg, type = 'received') {
+      const div = document.createElement('div')
+      div.className = `message ${type}`
+      const timestamp = new Date().toLocaleTimeString()
+      div.innerHTML = `<strong>[${timestamp}]</strong> ${msg}`
+      messagesEl.appendChild(div)
+      messagesEl.scrollTop = messagesEl.scrollHeight
+    }
+
+    connectBtn.addEventListener('click', () => {
+      ws = new WebSocket('ws://localhost:3000/ws')
+
+      ws.onopen = () => {
+        statusEl.textContent = 'Connected'
+        statusEl.className = 'status connected'
+        updateButtonStates(true)
+        addMessage('✅ Connected to WebSocket server', 'sent')
+      }
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data)
+
+        addMessage(`📩 ${JSON.stringify(data, null, 2)}`, 'received')
+
+        // Handle specific message types
+        if (data.type === 'connected') {
+          clientId = data.clientId
+          clientIdEl.textContent = clientId
+        }
+
+        if (data.type === 'authenticated') {
+          userId = data.userId
+          userIdEl.textContent = `${data.userId} (${data.email})`
+          addMessage(`✅ Authenticated as user ${data.userId}`, 'received')
+        }
+
+        if (data.type === 'auth-error') {
+          addMessage(`❌ Auth error: ${data.message}`, 'error')
+        }
+
+        if (data.type === 'error') {
+          addMessage(`❌ Error: ${data.message}`, 'error')
+        }
+
+        if (data.type === 'pong') {
+          addMessage('🏓 Pong received', 'received')
+        }
+      }
+
+      ws.onclose = () => {
+        statusEl.textContent = 'Disconnected'
+        statusEl.className = 'status disconnected'
+        updateButtonStates(false)
+        addMessage('❌ Disconnected from server', 'error')
+        clientId = null
+        userId = null
+        clientIdEl.textContent = '-'
+        userIdEl.textContent = '-'
+      }
+
+      ws.onerror = (error) => {
+        addMessage(`❌ WebSocket error: ${error}`, 'error')
+      }
+    })
+
+    disconnectBtn.addEventListener('click', () => {
+      if (ws) {
+        ws.close()
+      }
+    })
+
+    pingBtn.addEventListener('click', () => {
+      if (ws) {
+        ws.send(JSON.stringify({ type: 'ping' }))
+        addMessage('🏓 Ping sent', 'sent')
+      }
+    })
+
+    authBtn.addEventListener('click', () => {
+      const token = document.getElementById('token').value.trim()
+      if (ws && token) {
+        ws.send(JSON.stringify({
+          type: 'authenticate',
+          token: token
+        }))
+        addMessage(`🔐 Authenticating...`, 'sent')
+      } else {
+        alert('Please enter a JWT token')
+      }
+    })
+
+    joinRoomBtn.addEventListener('click', () => {
+      const roomId = document.getElementById('roomId').value.trim()
+      if (ws && roomId) {
+        ws.send(JSON.stringify({
+          type: 'join-room',
+          roomId: roomId
+        }))
+        addMessage(`🚪 Joining room: ${roomId}`, 'sent')
+      } else {
+        alert('Please enter a room ID')
+      }
+    })
+
+    leaveRoomBtn.addEventListener('click', () => {
+      const roomId = document.getElementById('roomId').value.trim()
+      if (ws && roomId) {
+        ws.send(JSON.stringify({
+          type: 'leave-room',
+          roomId: roomId
+        }))
+        addMessage(`🚪 Leaving room: ${roomId}`, 'sent')
+      } else {
+        alert('Please enter a room ID')
+      }
+    })
+
+    sendBtn.addEventListener('click', () => {
+      const message = document.getElementById('message').value.trim()
+      const roomId = document.getElementById('messageRoomId').value.trim()
+
+      if (ws && message) {
+        const payload = {
+          type: 'message',
+          message: message
+        }
+
+        if (roomId) {
+          payload.roomId = roomId
+        }
+
+        ws.send(JSON.stringify(payload))
+
+        const destination = roomId ? `to room ${roomId}` : 'broadcast'
+        addMessage(`💬 Message sent (${destination}): ${message}`, 'sent')
+        document.getElementById('message').value = ''
+      } else {
+        alert('Please enter a message')
+      }
+    })
+
+    document.getElementById('clear').addEventListener('click', () => {
+      messagesEl.innerHTML = ''
+    })
+
+    // Allow Enter key to send message
+    document.getElementById('message').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter' && !sendBtn.disabled) {
+        sendBtn.click()
+      }
+    })
+  </script>
+</body>
+</html>
