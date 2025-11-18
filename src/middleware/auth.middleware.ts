@@ -33,6 +33,8 @@ export async function authMiddleware(c: Context, next: Next) {
         id: users.id,
         name: users.name,
         email: users.email,
+        role: users.role,
+        isActive: users.isActive,
         createdAt: users.createdAt
       })
       .from(users)
@@ -44,6 +46,17 @@ export async function authMiddleware(c: Context, next: Next) {
         {
           success: false,
           message: 'User not found'
+        },
+        401
+      )
+    }
+
+    // Check if user is active
+    if (!user.isActive) {
+      return c.json(
+        {
+          success: false,
+          message: 'Account is inactive'
         },
         401
       )

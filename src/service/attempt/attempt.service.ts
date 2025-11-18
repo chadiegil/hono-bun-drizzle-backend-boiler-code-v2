@@ -676,4 +676,21 @@ export class AttemptService {
       })
       .where(eq(questions.id, questionId))
   }
+
+  /**
+   * Mark an attempt as abandoned
+   */
+  static async abandonAttempt(attemptId: number) {
+    const [updatedAttempt] = await db
+      .update(examAttempts)
+      .set({
+        status: 'abandoned' as any,
+        completedAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(examAttempts.id, attemptId))
+      .returning()
+
+    return updatedAttempt
+  }
 }

@@ -38,6 +38,7 @@ export class ImportExportController {
 
       const body = await c.req.parseBody()
       const file = body['file']
+      const defaultCategoryId = body['categoryId'] ? parseInt(body['categoryId'] as string) : undefined
 
       if (!file || typeof file === 'string') {
         return c.json(
@@ -53,7 +54,7 @@ export class ImportExportController {
       const csvContent = await (file as File).text()
 
       // Preview import (doesn't save to database)
-      const result = await ImportExportService.importQuestions(csvContent, user.id, true)
+      const result = await ImportExportService.importQuestions(csvContent, user.id, true, defaultCategoryId)
 
       return c.json({
         success: result.success,
@@ -92,6 +93,7 @@ export class ImportExportController {
 
       const body = await c.req.parseBody()
       const file = body['file']
+      const defaultCategoryId = body['categoryId'] ? parseInt(body['categoryId'] as string) : undefined
 
       if (!file || typeof file === 'string') {
         return c.json(
@@ -107,7 +109,7 @@ export class ImportExportController {
       const csvContent = await (file as File).text()
 
       // Import questions (saves to database)
-      const result = await ImportExportService.importQuestions(csvContent, user.id, false)
+      const result = await ImportExportService.importQuestions(csvContent, user.id, false, defaultCategoryId)
 
       return c.json(
         {

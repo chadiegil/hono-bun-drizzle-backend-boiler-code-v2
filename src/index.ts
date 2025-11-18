@@ -17,6 +17,8 @@ import { AttemptController } from './controller/attempt/attempt.controller'
 import { AdminController } from './controller/admin/admin.controller'
 import { ReviewController } from './controller/review/review.controller'
 import { ImportExportController } from './controller/import-export/import-export.controller'
+import { AnalyticsController } from './controller/analytics/analytics.controller'
+import { DashboardController } from './controller/dashboard/dashboard.controller'
 import { requestId } from './middleware/request-id.middleware'
 import { rateLimiter, authRateLimiter } from './middleware/rate-limit.middleware'
 import { env } from './config/env'
@@ -123,32 +125,35 @@ app.delete('/api/categories/:id', authMiddleware, CategoryController.delete)
 // ============================================
 // QUESTION ROUTES
 // ============================================
-app.post('/api/questions', authMiddleware, QuestionController.create)
-app.get('/api/questions', QuestionController.getAll)
-app.get('/api/questions/search', QuestionController.search)
-app.get('/api/questions/:id', QuestionController.getById)
-app.put('/api/questions/:id', authMiddleware, QuestionController.update)
-app.delete('/api/questions/:id', authMiddleware, QuestionController.delete)
+// Note: Specific routes must come before parameterized routes (/:id)
 
-// ============================================
-// QUESTION REVIEW ROUTES
-// ============================================
-app.get('/api/questions/pending-review', authMiddleware, requireModerator(), ReviewController.getPendingReview)
-app.get('/api/questions/by-status/:status', authMiddleware, ReviewController.getByStatus)
-app.get('/api/questions/review-stats', authMiddleware, ReviewController.getReviewStats)
-app.put('/api/questions/:id/submit-review', authMiddleware, ReviewController.submitForReview)
-app.put('/api/questions/:id/approve', authMiddleware, requireModerator(), ReviewController.approveQuestion)
-app.put('/api/questions/:id/reject', authMiddleware, requireModerator(), ReviewController.rejectQuestion)
-app.post('/api/questions/bulk-approve', authMiddleware, requireModerator(), ReviewController.bulkApprove)
-app.post('/api/questions/bulk-reject', authMiddleware, requireModerator(), ReviewController.bulkReject)
-
-// ============================================
-// IMPORT/EXPORT ROUTES
-// ============================================
+// Import/Export routes (must be before /:id)
 app.get('/api/questions/import-template', ImportExportController.downloadTemplate)
 app.post('/api/questions/import/preview', authMiddleware, ImportExportController.previewImport)
 app.post('/api/questions/import', authMiddleware, ImportExportController.importQuestions)
 app.get('/api/questions/export', authMiddleware, ImportExportController.exportQuestions)
+
+// Review routes (must be before /:id)
+app.get('/api/questions/pending-review', authMiddleware, requireModerator(), ReviewController.getPendingReview)
+app.get('/api/questions/review-stats', authMiddleware, ReviewController.getReviewStats)
+app.post('/api/questions/bulk-approve', authMiddleware, requireModerator(), ReviewController.bulkApprove)
+app.post('/api/questions/bulk-reject', authMiddleware, requireModerator(), ReviewController.bulkReject)
+
+// Search route (must be before /:id)
+app.get('/api/questions/search', QuestionController.search)
+
+// Basic CRUD routes
+app.post('/api/questions', authMiddleware, QuestionController.create)
+app.get('/api/questions', QuestionController.getAll)
+app.get('/api/questions/:id', QuestionController.getById)
+app.put('/api/questions/:id', authMiddleware, QuestionController.update)
+app.delete('/api/questions/:id', authMiddleware, QuestionController.delete)
+
+// Review routes with :id or :status params
+app.get('/api/questions/by-status/:status', authMiddleware, ReviewController.getByStatus)
+app.put('/api/questions/:id/submit-review', authMiddleware, ReviewController.submitForReview)
+app.put('/api/questions/:id/approve', authMiddleware, requireModerator(), ReviewController.approveQuestion)
+app.put('/api/questions/:id/reject', authMiddleware, requireModerator(), ReviewController.rejectQuestion)
 
 // ============================================
 // EXAM ROUTES
@@ -171,8 +176,15 @@ app.post('/api/exams/:id/start', authMiddleware, AttemptController.startAttempt)
 app.get('/api/attempts/:id', authMiddleware, AttemptController.getAttemptById)
 app.post('/api/attempts/:id/answer', authMiddleware, AttemptController.submitAnswer)
 app.post('/api/attempts/:id/submit', authMiddleware, AttemptController.submitExam)
+app.post('/api/attempts/:id/abandon', authMiddleware, AttemptController.abandonAttempt)
 app.get('/api/attempts/:id/results', authMiddleware, AttemptController.getResults)
 app.get('/api/users/me/attempts', authMiddleware, AttemptController.getUserAttempts)
+
+// ============================================
+// DASHBOARD ROUTES (User stats and activity)
+// ============================================
+app.get('/api/dashboard/stats', authMiddleware, DashboardController.getStats)
+app.get('/api/dashboard/recent', authMiddleware, DashboardController.getRecentActivity)
 
 // ============================================
 // ADMIN ROUTES (Role-based access)
@@ -216,6 +228,27 @@ app.get(
   requireModerator(),
   AdminController.getCategoryContributors
 )
+
+// ============================================
+// ANALYTICS ROUTES
+// ============================================
+
+// User analytics (authenticated users)
+app.get('/api/analytics/user/performance', authMiddleware, AnalyticsController.getUserPerformance)
+app.get('/api/analytics/user/categories', authMiddleware, AnalyticsController.getCategoryPerformance)
+app.get('/api/analytics/user/weakest-topics', authMiddleware, AnalyticsController.getWeakestTopics)
+app.get('/api/analytics/user/strongest-topics', authMiddleware, AnalyticsController.getStrongestTopics)
+app.get('/api/analytics/user/progress', authMiddleware, AnalyticsController.getProgressOverTime)
+
+// Admin/Moderator analytics
+app.get('/api/analytics/questions', authMiddleware, requireModerator(), AnalyticsController.getQuestionAnalytics)
+app.get('/api/analytics/overall', authMiddleware, requireModerator(), AnalyticsController.getOverallStats)
+app.get('/api/analytics/daily-activity', authMiddleware, requireModerator(), AnalyticsController.getDailyActivity)
+app.get('/api/analytics/users/:userId/performance', authMiddleware, requireModerator(), AnalyticsController.getSpecificUserPerformance)
+
+// ============================================
+// WEBSOCKET
+// ============================================
 
 // WebSocket endpoint
 app.get(

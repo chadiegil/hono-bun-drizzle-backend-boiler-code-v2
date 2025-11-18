@@ -79,6 +79,8 @@ export class CategoryController {
     try {
       const isActive = c.req.query('isActive')
       const parentId = c.req.query('parentId')
+      const page = c.req.query('page')
+      const limit = c.req.query('limit')
 
       const filters: any = {}
       if (isActive !== undefined) {
@@ -87,12 +89,18 @@ export class CategoryController {
       if (parentId !== undefined) {
         filters.parentId = parentId === 'null' ? null : parseInt(parentId)
       }
+      if (page) {
+        filters.page = parseInt(page)
+      }
+      if (limit) {
+        filters.limit = parseInt(limit)
+      }
 
-      const categories = await CategoryService.getCategories(filters)
+      const result = await CategoryService.getCategories(filters)
 
       return c.json({
         success: true,
-        data: categories
+        ...result
       })
     } catch (error: any) {
       return c.json(

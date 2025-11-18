@@ -38,7 +38,11 @@ export class CategoryService {
   /**
    * Get all categories (optionally filter by active status)
    */
-  static async getCategories(filters: { isActive?: boolean; parentId?: number | null } = {}) {
+  static async getCategories(filters: { isActive?: boolean; parentId?: number | null; page?: number; limit?: number } = {}) {
+    const page = filters.page || 1
+    const limit = filters.limit || 20
+    const offset = (page - 1) * limit
+
     let query = db.select().from(categories)
 
     const conditions = []
@@ -59,7 +63,25 @@ export class CategoryService {
       query = query.where(and(...conditions)) as any
     }
 
-    return await query
+    // Get total count for pagination
+    const countQuery = db.select({ count: sql<number>`count(*)` }).from(categories)
+    if (conditions.length > 0) {
+      countQuery.where(and(...conditions)) as any
+    }
+    const [{ count: total }] = await countQuery
+
+    // Get paginated data
+    const data = await query.limit(limit).offset(offset)
+
+    return {
+      data,
+      pagination: {
+        page,
+        limit,
+        total: Number(total),
+        totalPages: Math.ceil(Number(total) / limit)
+      }
+    }
   }
 
   /**

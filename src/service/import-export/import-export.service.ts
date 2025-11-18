@@ -1,5 +1,8 @@
 import Papa from 'papaparse'
 import { QuestionService } from '../question/question.service'
+import { db } from '../../db/client'
+import { questions, questionOptions } from '../../db/schema'
+import { eq, and, isNull } from 'drizzle-orm'
 
 export interface QuestionCSVRow {
   questionText: string
@@ -61,7 +64,9 @@ export class ImportExportService {
       'option3Text',
       'option3IsCorrect',
       'option4Text',
-      'option4IsCorrect'
+      'option4IsCorrect',
+      'option5Text',
+      'option5IsCorrect'
     ]
 
     const exampleRow = [
@@ -80,7 +85,9 @@ export class ImportExportService {
       'Berlin',
       'false',
       'Madrid',
-      'false'
+      'false',
+      '',
+      ''
     ]
 
     const csv = Papa.unparse({
@@ -228,7 +235,8 @@ export class ImportExportService {
   static async importQuestions(
     csvContent: string,
     userId: number,
-    preview: boolean = false
+    preview: boolean = false,
+    defaultCategoryId?: number
   ): Promise<ImportResult> {
     const parseResult = this.parseCSV(csvContent)
 
@@ -264,16 +272,24 @@ export class ImportExportService {
         continue
       }
 
+      // Prioritize defaultCategoryId (from UI selection) over CSV categoryId
+      // This ensures questions go to the selected category when importing
+      const questionData = {
+        ...validation.data,
+        categoryId: defaultCategoryId || validation.data.categoryId
+      }
+
       // If preview mode, just collect the data without saving
       if (preview) {
-        results.questions!.push(validation.data)
+        results.questions!.push(questionData)
         results.imported++
       } else {
         // Actually create the question
         try {
           const question = await QuestionService.createQuestion({
-            ...validation.data,
+            ...questionData,
             createdBy: userId
+            // Status defaults to 'draft' - needs manual approval via admin review page
           })
           results.questions!.push(question)
           results.imported++

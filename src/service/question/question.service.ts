@@ -45,6 +45,7 @@ export interface QuestionFilters {
   isPublic?: boolean
   createdBy?: number
   search?: string
+  status?: string
   page?: number
   limit?: number
 }
@@ -152,16 +153,6 @@ export class QuestionService {
     const limit = filters.limit || 20
     const offset = (page - 1) * limit
 
-    let query = db
-      .select({
-        question: questions,
-        optionsCount: sql<number>`count(${questionOptions.id})`.as('options_count')
-      })
-      .from(questions)
-      .leftJoin(questionOptions, eq(questions.id, questionOptions.questionId))
-      .groupBy(questions.id)
-      .$dynamic()
-
     const conditions = [isNull(questions.deletedAt)]
 
     if (filters.categoryId) {
@@ -188,6 +179,10 @@ export class QuestionService {
       conditions.push(ilike(questions.questionText, `%${filters.search}%`))
     }
 
+    if (filters.status) {
+      conditions.push(eq(questions.status, filters.status as any))
+    }
+
     if (filters.tags && filters.tags.length > 0) {
       // Check if any tag matches
       conditions.push(
@@ -198,10 +193,13 @@ export class QuestionService {
       )
     }
 
-    query = query.where(and(...conditions))
-    query = query.limit(limit).offset(offset)
-
-    const results = await query
+    // Get questions with filters
+    const questionsData = await db
+      .select()
+      .from(questions)
+      .where(and(...conditions))
+      .limit(limit)
+      .offset(offset)
 
     // Get total count for pagination
     const [{ count }] = await db
@@ -209,8 +207,35 @@ export class QuestionService {
       .from(questions)
       .where(and(...conditions))
 
+    // Get all options for the questions
+    const questionIds = questionsData.map((q) => q.id)
+    let allOptions: any[] = []
+
+    if (questionIds.length > 0) {
+      allOptions = await db
+        .select()
+        .from(questionOptions)
+        .where(inArray(questionOptions.questionId, questionIds))
+        .orderBy(questionOptions.order)
+    }
+
+    // Group options by question ID
+    const optionsByQuestionId = allOptions.reduce((acc, option) => {
+      if (!acc[option.questionId]) {
+        acc[option.questionId] = []
+      }
+      acc[option.questionId].push(option)
+      return acc
+    }, {} as Record<number, any[]>)
+
+    // Attach options to questions
+    const questionsWithOptions = questionsData.map((q) => ({
+      ...q,
+      options: optionsByQuestionId[q.id] || []
+    }))
+
     return {
-      data: results.map((r) => r.question),
+      data: questionsWithOptions,
       pagination: {
         page,
         limit,

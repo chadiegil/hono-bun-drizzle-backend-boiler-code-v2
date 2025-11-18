@@ -32,9 +32,11 @@ export interface RateLimitOptions {
  * Limits requests per IP address within a time window
  */
 export function rateLimiter(options: RateLimitOptions = {}) {
+  const isDevelopment = process.env.NODE_ENV === 'development'
+
   const {
     windowMs = 15 * 60 * 1000, // 15 minutes
-    max = 100, // 100 requests per window | change this to production
+    max = isDevelopment ? 10000 : 100, // 10000 in dev, 100 in production
     message = 'Too many requests, please try again later',
     statusCode = 429,
     keyGenerator = (c: Context) => {

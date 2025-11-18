@@ -350,4 +350,55 @@ export class AttemptController {
       )
     }
   }
+
+  /**
+   * Abandon attempt (mark as abandoned when user leaves)
+   * POST /api/attempts/:id/abandon
+   */
+  static async abandonAttempt(c: Context) {
+    try {
+      const user = c.get('user')
+      if (!user) {
+        return c.json({ success: false, message: 'Unauthorized' }, 401)
+      }
+
+      const attemptId = parseInt(c.req.param('id'))
+
+      // Verify attempt exists and user owns it
+      const attempt = await AttemptService.getAttemptById(attemptId)
+      if (!attempt) {
+        return c.json({ success: false, message: 'Attempt not found' }, 404)
+      }
+
+      if (attempt.userId !== user.id) {
+        return c.json(
+          { success: false, message: 'Forbidden: You can only abandon your own attempts' },
+          403
+        )
+      }
+
+      // Only abandon if still in progress
+      if (attempt.status === 'in_progress') {
+        const result = await AttemptService.abandonAttempt(attemptId)
+        return c.json({
+          success: true,
+          message: 'Attempt abandoned',
+          data: result
+        })
+      }
+
+      return c.json({
+        success: true,
+        message: 'Attempt already completed or abandoned'
+      })
+    } catch (error: any) {
+      return c.json(
+        {
+          success: false,
+          message: error.message || 'Failed to abandon attempt'
+        },
+        500
+      )
+    }
+  }
 }

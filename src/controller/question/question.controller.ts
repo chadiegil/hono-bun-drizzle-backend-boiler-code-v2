@@ -71,6 +71,7 @@ export class QuestionController {
         questionType: c.req.query('questionType'),
         isPublic: c.req.query('isPublic') ? c.req.query('isPublic') === 'true' : undefined,
         search: c.req.query('search'),
+        status: c.req.query('status'),
         page: c.req.query('page') ? parseInt(c.req.query('page')!) : 1,
         limit: c.req.query('limit') ? parseInt(c.req.query('limit')!) : 20
       }
