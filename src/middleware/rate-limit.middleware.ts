@@ -100,7 +100,7 @@ export function authRateLimiter() {
 
   return rateLimiter({
     windowMs: 1 * 60 * 1000, // 1 minute (reduced for easier testing)
-    max: isDevelopment ? 1000 : 500, // 1000 in dev, 500 in production
+    max: isDevelopment ? 10000 : 1000, // 10000 in dev, 1000 in production
     message: 'Too many authentication attempts, please try again later'
   })
 }
