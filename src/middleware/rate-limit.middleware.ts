@@ -99,8 +99,8 @@ export function authRateLimiter() {
   const isDevelopment = process.env.NODE_ENV === 'development'
 
   return rateLimiter({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: isDevelopment ? 1000 : 500, // 1000 in dev, 500 in production (increased for testing)
+    windowMs: 1 * 60 * 1000, // 1 minute (reduced for easier testing)
+    max: isDevelopment ? 1000 : 500, // 1000 in dev, 500 in production
     message: 'Too many authentication attempts, please try again later'
   })
 }
