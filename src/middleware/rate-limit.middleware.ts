@@ -41,10 +41,11 @@ export function rateLimiter(options: RateLimitOptions = {}) {
     statusCode = 429,
     keyGenerator = (c: Context) => {
       // Get IP from various possible headers
+      // Cloudflare passes the real IP in CF-Connecting-IP header
       const ip =
-        c.req.header('x-forwarded-for')?.split(',')[0] ||
-        c.req.header('x-real-ip') ||
         c.req.header('cf-connecting-ip') ||
+        c.req.header('x-real-ip') ||
+        c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ||
         'unknown'
       return ip
     }
@@ -99,7 +100,7 @@ export function authRateLimiter() {
 
   return rateLimiter({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: isDevelopment ? 1000 : 50, // 1000 in dev, 50 in production
+    max: isDevelopment ? 1000 : 500, // 1000 in dev, 500 in production (increased for testing)
     message: 'Too many authentication attempts, please try again later'
   })
 }
