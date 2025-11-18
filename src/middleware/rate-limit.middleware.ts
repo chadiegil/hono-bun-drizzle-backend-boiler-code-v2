@@ -36,7 +36,7 @@ export function rateLimiter(options: RateLimitOptions = {}) {
 
   const {
     windowMs = 15 * 60 * 1000, // 15 minutes
-    max = isDevelopment ? 10000 : 100, // 10000 in dev, 100 in production
+    max = isDevelopment ? 10000 : 1000, // 10000 in dev, 1000 in production
     message = 'Too many requests, please try again later',
     statusCode = 429,
     keyGenerator = (c: Context) => {
@@ -99,7 +99,7 @@ export function authRateLimiter() {
 
   return rateLimiter({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: isDevelopment ? 1000 : 5, // 1000 in dev, 5 in production
+    max: isDevelopment ? 1000 : 50, // 1000 in dev, 50 in production
     message: 'Too many authentication attempts, please try again later'
   })
 }
