@@ -1,6 +1,7 @@
 import { Context } from 'hono'
 import { z } from 'zod'
 import { AdminService } from '../../service/admin/admin.service'
+import { NotificationService } from '../../service/notification/notification.service'
 
 // Validation schemas
 export const updateUserRoleSchema = z.object({
@@ -272,6 +273,57 @@ export class AdminController {
         {
           success: false,
           message: error.message || 'Failed to fetch contributions'
+        },
+        500
+      )
+    }
+  }
+
+  /**
+   * Get new registrations count
+   * GET /api/admin/notifications/count
+   */
+  static async getNotificationsCount(c: Context) {
+    try {
+      const since = c.req.query('since')
+      const sinceDate = since ? new Date(since) : undefined
+
+      const count = await NotificationService.getNewRegistrationsCount(sinceDate)
+
+      return c.json({
+        success: true,
+        data: { count }
+      })
+    } catch (error: any) {
+      return c.json(
+        {
+          success: false,
+          message: error.message || 'Failed to fetch notification count'
+        },
+        500
+      )
+    }
+  }
+
+  /**
+   * Get recent registrations
+   * GET /api/admin/notifications/recent
+   */
+  static async getRecentRegistrations(c: Context) {
+    try {
+      const limit = c.req.query('limit') ? parseInt(c.req.query('limit')!) : 10
+
+      const users = await NotificationService.getRecentRegistrations(limit)
+
+      return c.json({
+        success: true,
+        data: users
+      })
+    } catch (error: any) {
+      return c.json(
+        {
+          success: false,
+          message: error.message || 'Failed to fetch recent registrations'
         },
         500
       )

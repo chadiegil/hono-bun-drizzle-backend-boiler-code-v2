@@ -7,6 +7,7 @@ import { prettyJSON } from 'hono/pretty-json'
 import { upgradeWebSocket, websocket } from 'hono/bun'
 import { db } from './db/client'
 import { users } from './db/schema'
+import { eq } from 'drizzle-orm'
 import { authMiddleware } from './middleware/auth.middleware'
 import { requireSuperAdmin, requireModerator } from './middleware/rbac.middleware'
 import { AuthController } from './controller/auth/auth.controller'
@@ -229,6 +230,20 @@ app.get(
   AdminController.getCategoryContributors
 )
 
+// Notifications
+app.get(
+  '/api/admin/notifications/count',
+  authMiddleware,
+  requireSuperAdmin(),
+  AdminController.getNotificationsCount
+)
+app.get(
+  '/api/admin/notifications/recent',
+  authMiddleware,
+  requireSuperAdmin(),
+  AdminController.getRecentRegistrations
+)
+
 // ============================================
 // ANALYTICS ROUTES
 // ============================================
@@ -389,11 +404,18 @@ async function handleAuthenticate(ws: any, clientId: string, token: string) {
     const payload = await AuthService.verifyToken(token)
     wsManager.setUserId(clientId, payload.userId)
 
+    // Fetch user role from database
+    const [user] = await db.select().from(users).where(eq(users.id, payload.userId)).limit(1)
+    if (user) {
+      wsManager.setUserRole(clientId, user.role)
+    }
+
     ws.send(
       JSON.stringify({
         type: 'authenticated',
         userId: payload.userId,
-        email: payload.email
+        email: payload.email,
+        role: user?.role
       })
     )
   } catch (error: any) {

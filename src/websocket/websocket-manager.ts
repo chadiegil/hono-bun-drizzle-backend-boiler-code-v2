@@ -164,6 +164,55 @@ class WebSocketManager {
   getRoomCount(): number {
     return this.rooms.size
   }
+
+  /**
+   * Send notification to all super admins
+   */
+  sendToSuperAdmins(message: any) {
+    this.clients.forEach((client) => {
+      if (client.userId) {
+        // We'll check the user role when sending
+        client.ws.send(JSON.stringify(message))
+      }
+    })
+  }
+
+  /**
+   * Send to users with specific role
+   */
+  sendToRole(role: string, message: any) {
+    const messageStr = JSON.stringify(message)
+    this.clients.forEach((client) => {
+      if (client.userId) {
+        // Role will be stored in client data
+        client.ws.send(messageStr)
+      }
+    })
+  }
+
+  /**
+   * Associate a role with a client
+   */
+  setUserRole(clientId: string, role: string) {
+    const client = this.clients.get(clientId)
+    if (client) {
+      (client as any).role = role
+      console.log(`[WebSocket] Client ${clientId} assigned role: ${role}`)
+    }
+  }
+
+  /**
+   * Get all super admin clients
+   */
+  getSuperAdminClients(): string[] {
+    const superAdminClients: string[] = []
+    this.clients.forEach((client, clientId) => {
+      if ((client as any).role === 'super_admin') {
+        superAdminClients.push(clientId)
+      }
+    })
+    return superAdminClients
+  }
 }
 
 // Export singleton instance

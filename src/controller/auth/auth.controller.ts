@@ -1,6 +1,7 @@
 import { Context } from 'hono'
 import { AuthService } from '../../service/auth/auth.service'
 import { z } from 'zod'
+import { wsManager } from '../../websocket/websocket-manager'
 
 // Validation schemas
 export const registerSchema = z.object({
@@ -31,6 +32,21 @@ export class AuthController {
 
       // Register user
       const result = await AuthService.register(validatedData)
+
+      // Send WebSocket notification to all super admins
+      const superAdminClients = wsManager.getSuperAdminClients()
+      superAdminClients.forEach((clientId) => {
+        wsManager.sendToClient(clientId, {
+          type: 'user-registered',
+          data: {
+            userId: result.user.id,
+            name: result.user.name,
+            email: result.user.email,
+            createdAt: result.user.createdAt
+          },
+          timestamp: new Date().toISOString()
+        })
+      })
 
       return c.json(
         {
